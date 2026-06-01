@@ -28,7 +28,7 @@ pipeline {
         stage('Backend Test') {
             steps {
                 dir('backend') {
-                    sh 'pip install --break-system-packages -r requirements.txt --quiet'
+                    sh 'pip install --default-timeout=120 --break-system-packages -r requirements.txt'
                     sh 'python -m pytest tests/ -v'
                 }
             }
@@ -36,7 +36,7 @@ pipeline {
         stage('Frontend Test') {
             steps {
                 dir('frontend') {
-                    sh 'npm install --quiet'
+                    sh 'npm install'
                     sh 'npm run test'
                 }
             }
