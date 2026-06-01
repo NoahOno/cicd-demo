@@ -62,7 +62,7 @@ pipeline {
                     git config user.email "cicd@jenkins.local"
                     git config user.name "Jenkins CI"
                     git add .
-                    git commit -m "Update images to ${IMAGE_TAG}"
+                    git commit -m "Update images to ${IMAGE_TAG}" || true
                     git push
                 """
             }
