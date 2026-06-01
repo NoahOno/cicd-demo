@@ -58,6 +58,8 @@ pipeline {
                     cd manifests
                     sed -i 's|image: .*todo-backend.*|image: ${MANIFEST_REGISTRY}/todo-backend:${IMAGE_TAG}|g' backend/deployment.yaml
                     sed -i 's|image: .*todo-frontend.*|image: ${MANIFEST_REGISTRY}/todo-frontend:${IMAGE_TAG}|g' frontend/deployment.yaml
+                    git config user.email "cicd@jenkins.local"
+                    git config user.name "Jenkins CI"
                     git add .
                     git commit -m "Update images to ${IMAGE_TAG}"
                     git push
