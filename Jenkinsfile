@@ -29,7 +29,7 @@ pipeline {
             steps {
                 dir('backend') {
                     sh 'pip install --default-timeout=120 --break-system-packages -r requirements.txt'
-                    sh 'python -m pytest tests/ -v'
+                    sh 'python3 -m pytest tests/ -v'
                 }
             }
         }
