@@ -54,6 +54,7 @@ pipeline {
         stage('Update Manifests') {
             steps {
                 sh """
+                    rm -rf manifests
                     git clone ${MANIFESTS_REPO} manifests
                     cd manifests
                     sed -i 's|image: .*todo-backend.*|image: ${MANIFEST_REGISTRY}/todo-backend:${IMAGE_TAG}|g' backend/deployment.yaml
