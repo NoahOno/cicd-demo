@@ -36,7 +36,7 @@ pipeline {
         stage('Frontend Test') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
+                    sh 'npm install --no-audit --no-fund'
                     sh 'npm run test'
                 }
             }
