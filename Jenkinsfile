@@ -55,7 +55,7 @@ pipeline {
             steps {
                 sh """
                     rm -rf manifests
-                    git clone ${MANIFESTS_REPO} manifests
+                    git clone git@github.com:NoahOno/cicd-demo-manifests.git manifests
                     cd manifests
                     sed -i 's|image: .*todo-backend.*|image: ${MANIFEST_REGISTRY}/todo-backend:${IMAGE_TAG}|g' backend/deployment.yaml
                     sed -i 's|image: .*todo-frontend.*|image: ${MANIFEST_REGISTRY}/todo-frontend:${IMAGE_TAG}|g' frontend/deployment.yaml
