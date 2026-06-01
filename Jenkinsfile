@@ -1,86 +1,72 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(name: 'REGISTRY', defaultValue: 'localhost:5050', description: 'Registry for Docker build/push')
+        string(name: 'MANIFEST_REGISTRY', defaultValue: 'k3d-cicd-registry:5050', description: 'Registry in K8s manifests')
+        string(name: 'GIT_REPO', defaultValue: 'https://github.com/NoahOno/cicd-demo.git', description: 'Application source repo')
+        string(name: 'MANIFESTS_REPO', defaultValue: 'https://github.com/NoahOno/cicd-demo-manifests.git', description: 'K8s manifests repo')
+    }
+
     environment {
-        DOCKER_REGISTRY = 'docker.io'
-        DOCKER_IMAGE_BACKEND = 'todo-backend'
-        DOCKER_IMAGE_FRONTEND = 'todo-frontend'
-        K8S_NAMESPACE = 'default'
+        REGISTRY = "${params.REGISTRY}"
+        MANIFEST_REGISTRY = "${params.MANIFEST_REGISTRY}"
+        IMAGE_TAG = "${params.IMAGE_TAG}"
+        GIT_REPO = "${params.GIT_REPO}"
+        MANIFESTS_REPO = "${params.MANIFESTS_REPO}"
+        BACKEND_IMAGE = "${REGISTRY}/todo-backend:${IMAGE_TAG}"
+        FRONTEND_IMAGE = "${REGISTRY}/todo-frontend:${IMAGE_TAG}"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git url: "${GIT_REPO}", branch: 'main'
             }
         }
-
-        stage('Backend - Test') {
+        stage('Backend Test') {
             steps {
                 dir('backend') {
-                    sh '''
-                        pip install -r requirements.txt
-                        pytest -v
-                    '''
+                    sh 'pip install -r requirements.txt --quiet'
+                    sh 'python -m pytest tests/ -v'
                 }
             }
         }
-
-        stage('Frontend - Install & Test') {
+        stage('Frontend Test') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        npm install
-                        npm run test
-                    '''
+                    sh 'npm install --quiet'
+                    sh 'npm run test'
                 }
             }
         }
-
-        stage('Backend - Build & Push') {
+        stage('Docker Build & Push') {
             steps {
                 dir('backend') {
-                    sh """
-                        docker build -t ${DOCKER_IMAGE_BACKEND}:${BUILD_NUMBER} .
-                        docker tag ${DOCKER_IMAGE_BACKEND}:${BUILD_NUMBER} ${DOCKER_IMAGE_BACKEND}:latest
-                    """
+                    sh "docker build -t ${BACKEND_IMAGE} . && docker push ${BACKEND_IMAGE}"
                 }
-            }
-        }
-
-        stage('Frontend - Build & Push') {
-            steps {
                 dir('frontend') {
-                    sh """
-                        docker build -t ${DOCKER_IMAGE_FRONTEND}:${BUILD_NUMBER} .
-                        docker tag ${DOCKER_IMAGE_FRONTEND}:${BUILD_NUMBER} ${DOCKER_IMAGE_FRONTEND}:latest
-                    """
+                    sh "docker build -t ${FRONTEND_IMAGE} . && docker push ${FRONTEND_IMAGE}"
                 }
             }
         }
-
-        stage('Deploy to K8s') {
+        stage('Update Manifests') {
             steps {
-                dir('k8s') {
-                    sh """
-                        sed -i 's|latest|${BUILD_NUMBER}|g' backend-deployment.yaml
-                        sed -i 's|latest|${BUILD_NUMBER}|g' frontend-deployment.yaml
-                        kubectl apply -f backend-deployment.yaml
-                        kubectl apply -f frontend-deployment.yaml
-                    """
-                }
+                sh """
+                    git clone ${MANIFESTS_REPO} manifests
+                    cd manifests
+                    sed -i 's|image: .*todo-backend.*|image: ${MANIFEST_REGISTRY}/todo-backend:${IMAGE_TAG}|g' backend/deployment.yaml
+                    sed -i 's|image: .*todo-frontend.*|image: ${MANIFEST_REGISTRY}/todo-frontend:${IMAGE_TAG}|g' frontend/deployment.yaml
+                    git add .
+                    git commit -m "Update images to ${IMAGE_TAG}"
+                    git push
+                """
             }
         }
     }
-
     post {
-        success {
-            echo 'Pipeline completed successfully!'
-            echo "Frontend: http://frontend.${K8S_NAMESPACE}.svc.cluster.local"
-            echo "Backend: http://backend.${K8S_NAMESPACE}.svc.cluster.local"
-        }
-        failure {
-            echo 'Pipeline failed.'
-        }
+        success { echo "Build ${IMAGE_TAG} succeeded!" }
+        failure { echo "Build ${IMAGE_TAG} failed." }
     }
 }
