@@ -28,7 +28,8 @@ pipeline {
         stage('Backend Test') {
             steps {
                 dir('backend') {
-                    sh 'python3 -m venv venv && . venv/bin/activate && pip install -r requirements.txt --quiet && python -m pytest tests/ -v && rm -rf venv'
+                    sh 'pip install --break-system-packages -r requirements.txt --quiet'
+                    sh 'python -m pytest tests/ -v'
                 }
             }
         }
