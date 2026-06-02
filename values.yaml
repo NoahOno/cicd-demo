@@ -1,0 +1,12 @@
+# cicd-demo business-specific overrides
+service_name: todo
+registry: k3d-cicd-registry:5050
+subprojects:
+  - name: backend
+    dir: backend
+    dockerfile: Dockerfile
+    test_cmd: "pip install --default-timeout=120 --break-system-packages -r requirements.txt && python3 -m pytest tests/ -v"
+  - name: frontend
+    dir: frontend
+    dockerfile: Dockerfile
+    test_cmd: "npm install --no-audit --no-fund && npm run test"
