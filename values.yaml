@@ -1,6 +1,6 @@
 # cicd-demo business-specific overrides
 service_name: todo
-registry: k3d-cicd-registry:5050
+registry: localhost:5050
 subprojects:
   - name: backend
     dir: backend
