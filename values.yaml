@@ -4,9 +4,11 @@ registry: localhost:5050
 subprojects:
   - name: backend
     dir: backend
+    type: python
     dockerfile: Dockerfile
     test_cmd: "pip install --default-timeout=120 --break-system-packages -r requirements.txt && python3 -m pytest tests/ -v"
   - name: frontend
     dir: frontend
+    type: nodejs
     dockerfile: Dockerfile
     test_cmd: "npm install --no-audit --no-fund && npm run test"
